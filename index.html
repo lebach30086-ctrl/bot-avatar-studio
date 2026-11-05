@@ -75,6 +75,7 @@
 <script>
 const DARK = '#2b2d3a', NAVY = '#1f2a5c', GLOW = '#3ee6e8', BLUSH = '#f2559a';
 const OPTIONS = {
+  style: { label:'Phong cách', items:{ three:'3D', pixel:'Pixel art', ascii:'ASCII' } },
   color: { label:'Màu thân', swatch:true, items:{
     white:['#f4f6f9','#cfd6e0'], blue:['#5aaaf2','#3a80d4'], sky:['#6fd0f5','#3fa9d6'], teal:['#2fbfae','#1f9a8c'],
     green:['#8fd150','#68ad2c'], yellow:['#f9c23c','#e09a12'], orange:['#f7a928','#dc860b'], coral:['#f57a6b','#d9554a'],
@@ -93,9 +94,13 @@ const OPTIONS = {
   blush: { label:'Má hồng', items:{ off:'Không', on:'Có' } },
   pods:  { label:'Tai bên', items:{ dark:'Tối', accent:'Màu nhấn', none:'Không' } },
   detail:{ label:'Hoa văn', items:{ none:'Không', lines:'Rãnh', dots:'Đinh tán' } },
-  bg:    { label:'Nền', items:{ soft:'Tròn nhạt', solid:'Tròn đậm', none:'Trong suốt' } },
+  bg:    { label:'Nền (ô đầu = trong suốt, ô 2 = theo màu nhấn)', swatch:true, items:{ none:'repeating-conic-gradient(#d9dde5 0 25%, #fff 0 50%) 50%/10px 10px',
+    soft:'linear-gradient(135deg,#d6fbfb,#e4ecff)', sky:'#e3f0ff', mint:'#dcf8ec', lemon:'#fff6d1', peach:'#ffe6d9',
+    pink:'#ffe3f0', lavender:'#ece6ff', grey:'#eef0f4',
+    blue:'#1e6ff0', teal:'#2fbfae', green:'#5cc26b', yellow:'#f9c23c', orange:'#f7a928', red:'#e3002d', hotpink:'#f2559a',
+    purple:'#8d63c9', navy:'#1f2a5c', night:'#0b1020', black:'#1a1a1f' } },
 };
-const state = { color:'white', accent:'cyan', shape:'round', top:'fins', cap:'pill', face:'navy', eyes:'dot', eyeC:'auto', mouth:'smile',
+const state = { style:'three', color:'white', accent:'cyan', shape:'round', top:'fins', cap:'pill', face:'navy', eyes:'dot', eyeC:'auto', mouth:'smile',
   blush:'off', pods:'dark', detail:'none', bg:'soft' };
 
 const controls = document.getElementById('controls');
@@ -138,8 +143,8 @@ function svgMarkup(s) {
     squircle:[`<path d="M128 62 Q208 62 210 142 Q208 222 128 222 Q48 222 46 142 Q48 62 128 62 Z"/>`, 62, 46, 210],
   }[s.shape];
   const p = [`<defs><clipPath id="${id}">${shape}</clipPath></defs>`];
-  if (s.bg === 'soft')  p.push(`<circle cx="128" cy="128" r="128" fill="${F(ac)}" opacity=".18"/>`);
-  if (s.bg === 'solid') p.push(`<circle cx="128" cy="128" r="128" fill="${F(ac)}"/>`);
+  if (s.bg === 'soft')  p.push(`<circle cx="128" cy="128" r="128" fill="${mix(ac, .82)}"/>`);
+  else if (s.bg !== 'none') p.push(`<circle cx="128" cy="128" r="128" fill="${OPTIONS.bg.items[s.bg]}"/>`);
   p.push(`<ellipse cx="128" cy="230" rx="72" ry="9" fill="#000" opacity=".18" filter="url(#${id}bl)"/>`);
   p.push(`<g>`);
 
@@ -173,7 +178,7 @@ function svgMarkup(s) {
   p.push(`<rect x="${fx}" y="112" width="${fw}" height="72" rx="30" fill="${F(faceFill)}"/>`);
   p.push(`<rect x="${fx+8}" y="116" width="${fw-16}" height="26" rx="13" fill="#fff" opacity=".08"/>`);
   if (s.face !== 'light') p.push(`<path d="M${fx+14} 124 Q${fx+20} 116 ${fx+34} 116" stroke="#fff" stroke-opacity=".25" stroke-width="5" stroke-linecap="round" fill="none"/>`);
-  const ln = `stroke="${ink}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"`;
+  const lnw = w => `stroke="${ink}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" fill="none"`, ln = lnw(5);
   const E = f => f(106) + f(150);
   p.push(s.face !== 'light' ? `<g filter="url(#${id}gl)">` : '<g>');
   p.push({
@@ -187,8 +192,8 @@ function svgMarkup(s) {
     star:  E(x => `<path d="M${x} 129 L${x+4} 138 L${x+13} 139 L${x+6} 145 L${x+8} 154 L${x} 149 L${x-8} 154 L${x-6} 145 L${x-13} 139 L${x-4} 138 Z" fill="${ink}" stroke="${ink}" stroke-width="2" stroke-linejoin="round"/>`),
     big:   E(x => `<circle cx="${x}" cy="141" r="12" fill="${ink}"/><circle cx="${x+4}" cy="136" r="4" fill="#fff"/><circle cx="${x-4}" cy="146" r="2" fill="#fff"/>`),
     sleepy:E(x => `<path d="M${x-10} 140 H${x+10}" ${ln}/><path d="M${x-8} 140 Q${x} 150 ${x+8} 140 Z" fill="${ink}"/>`) + `<text x="168" y="128" font-size="13" font-weight="700" font-family="system-ui,sans-serif" fill="${ink}">z</text>`,
-    sad:   E(x => `<circle cx="${x}" cy="144" r="7" fill="${ink}"/>`) + `<path d="M96 132 L114 128 M160 132 L142 128" ${ln} stroke-width="4"/>`,
-    determined: E(x => `<circle cx="${x}" cy="145" r="7" fill="${ink}"/>`) + `<path d="M95 128 L115 135 M161 128 L141 135" ${ln} stroke-width="4.5"/>`,
+    sad:   E(x => `<circle cx="${x}" cy="144" r="7" fill="${ink}"/>`) + `<path d="M96 132 L114 128 M160 132 L142 128" ${lnw(4)}/>`,
+    determined: E(x => `<circle cx="${x}" cy="145" r="7" fill="${ink}"/>`) + `<path d="M95 128 L115 135 M161 128 L141 135" ${lnw(4.5)}/>`,
     side:  E(x => `<path d="M${x-11} 142 Q${x} 132 ${x+11} 142 Q${x} 150 ${x-11} 142 Z" fill="none" stroke="${ink}" stroke-width="3"/><circle cx="${x+5}" cy="142" r="4.5" fill="${ink}"/>`),
     dizzy: E(x => `<path d="M${x-8} 134 L${x+8} 150 M${x+8} 134 L${x-8} 150" ${ln}/>`),
     cool:  `<path d="M90 134 H166 V140 Q164 154 148 154 Q136 154 132 140 H124 Q120 154 108 154 Q92 154 90 140 Z" fill="${ink}"/><path d="M98 138 L104 138" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".7"/>`,
@@ -199,15 +204,15 @@ function svgMarkup(s) {
   p.push({
     smile:`<path d="M117 160 Q128 170 139 160" ${ln}/>`,
     grin: `<path d="M115 158 H141 Q139 172 128 172 Q117 172 115 158 Z" fill="${ink}"/>`,
-    cat:  `<path d="M114 161 Q121 169 128 161 Q135 169 142 161" ${ln} stroke-width="4"/>`,
+    cat:  `<path d="M114 161 Q121 169 128 161 Q135 169 142 161" ${lnw(4)}/>`,
     flat: `<path d="M118 164 H138" ${ln}/>`,
     open: `<ellipse cx="128" cy="166" rx="7" ry="8" fill="${ink}"/>`,
     laugh:`<path d="M112 157 H144 Q144 176 128 176 Q112 176 112 157 Z" fill="${ink}"/><path d="M118 170 Q128 164 138 170 Q134 176 128 176 Q122 176 118 170 Z" fill="#ff7eb6"/>`,
     tongue:`<path d="M116 160 Q128 168 140 160" ${ln}/><path d="M124 165 V172 Q128 177 132 172 V165 Z" fill="#ff7eb6"/>`,
     smirk:`<path d="M117 165 Q131 167 140 158" ${ln}/>`,
-    wavy: `<path d="M114 164 Q118 158 121 164 T128 164 T135 164 T142 164" ${ln} stroke-width="4"/>`,
+    wavy: `<path d="M114 164 Q118 158 121 164 T128 164 T135 164 T142 164" ${lnw(4)}/>`,
     sad:  `<path d="M118 169 Q128 159 138 169" ${ln}/>`,
-    kiss: `<path d="M126 158 Q133 161 128 164 Q133 167 126 170" ${ln} stroke-width="4"/>`,
+    kiss: `<path d="M126 158 Q133 161 128 164 Q133 167 126 170" ${lnw(4)}/>`,
     grille:`<rect x="112" y="158" width="32" height="14" rx="5" fill="${ink}"/><path d="M120 158 V172 M128 158 V172 M136 158 V172" stroke="${faceFill}" stroke-width="2.5"/>`,
     talk: [0,1,2,3,4].map(i => { const h = [6,12,16,10,6][i]; return `<rect x="${113+i*7}" y="${166-h/2}" width="4" height="${h}" rx="2" fill="${ink}"/>`; }).join(''),
     none: '',
@@ -224,16 +229,55 @@ function svgMarkup(s) {
   return p.join('');
 }
 
-function render() {
-  const inner = svgMarkup(state);
+// Vẽ markup 3D xuống lưới n×n điểm ảnh để dựng lại thành pixel/ASCII
+async function raster(markup, n) {
+  const img = new Image();
+  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="${n}" height="${n}">${markup}</svg>`);
+  await img.decode();
+  const ctx = Object.assign(document.createElement('canvas'), { width:n, height:n }).getContext('2d');
+  ctx.drawImage(img, 0, 0, n, n);
+  return ctx.getImageData(0, 0, n, n).data;
+}
+const hex = (r, g, b) => '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
+async function stylize(s) {
+  if (s.style === 'pixel') {
+    const n = 32, k = 256 / n, d = await raster(svgMarkup(s), n), out = [];
+    const q = v => Math.min(255, Math.round(v / 24) * 24);           // giảm màu cho ra chất pixel
+    const at = (x, y) => { const i = (y * n + x) * 4; return d[i+3] < 128 ? null : hex(q(d[i]), q(d[i+1]), q(d[i+2])); };
+    for (let y = 0; y < n; y++) for (let x = 0; x < n;) {
+      const c = at(x, y); let w = 1;
+      while (x + w < n && at(x + w, y) === c) w++;                   // gộp các ô cùng màu liền nhau
+      if (c) out.push(`<rect x="${x*k}" y="${y*k}" width="${w*k}" height="${k}" fill="${c}"/>`);
+      x += w;
+    }
+    return `<g shape-rendering="crispEdges">${out.join('')}</g>`;
+  }
+  if (s.style === 'ascii') {
+    const n = 30, k = 256 / n, d = await raster(svgMarkup({ ...s, bg:'none' }), n), ramp = '.:-=+*#%@';
+    const lift = v => Math.round(v * .8 + 255 * .2);   // làm sáng màu chữ trên nền tối
+    const out = [`<circle cx="128" cy="128" r="128" fill="#0b1020"/>`];
+    for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+      const i = (y * n + x) * 4; if (d[i+3] < 100) continue;
+      const lum = (0.2126 * d[i] + 0.7152 * d[i+1] + 0.0722 * d[i+2]) / 255;
+      const ch = ramp[Math.round(2 + lum * 6)];
+      out.push(`<text x="${(x+.5)*k}" y="${(y+.5)*k}" fill="${hex(lift(d[i]), lift(d[i+1]), lift(d[i+2]))}">${ch}</text>`);
+    }
+    return `<g font-family="ui-monospace,Menlo,Consolas,monospace" font-weight="700" font-size="${k*1.35}" text-anchor="middle" dominant-baseline="central">${out.join('')}</g>`;
+  }
+  return svgMarkup(s);
+}
+let ticket = 0;
+async function render() {
+  const t = ++ticket, inner = await stylize(state);
+  if (t !== ticket) return;                                           // bỏ kết quả cũ nếu đã đổi tùy chọn
   for (const id of ['avatar','s96','s40','s24','s36']) document.getElementById(id).innerHTML = inner;
 }
-const full = () => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="512" height="512">${svgMarkup(state)}</svg>`;
+const full = async () => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="512" height="512">${await stylize(state)}</svg>`;
 const fileName = () => (document.getElementById('name').value.trim() || 'bot').toLowerCase().replace(/\s+/g,'-');
 document.getElementById('png').onclick = async () => {
   try {
     const img = new Image();
-    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(full());
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(await full());
     await img.decode();
     const c = Object.assign(document.createElement('canvas'), { width:512, height:512 });
     c.getContext('2d').drawImage(img, 0, 0, 512, 512);
@@ -248,6 +292,7 @@ document.getElementById('png').onclick = async () => {
 };
 document.getElementById('random').onclick = () => {
   for (const [key, o] of Object.entries(OPTIONS)) {
+    if (key === 'style') continue;   // giữ phong cách đang chọn
     const keys = Object.keys(o.items);
     state[key] = keys[Math.floor(Math.random() * keys.length)];
     document.querySelector(`input[name=${key}][value=${state[key]}]`).checked = true;
