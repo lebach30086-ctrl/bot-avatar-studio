@@ -86,7 +86,9 @@ const OPTIONS = {
   cap:   { label:'Đèn đỉnh', items:{ pill:'Đèn', dome:'Vòm tối', none:'Không' } },
   face:  { label:'Màn hình mặt', items:{ navy:'Xanh đêm', indigo:'Tím than', dark:'Đen', light:'Sáng' } },
   eyes:  { label:'Ánh mắt (tính cách)', items:{ dot:'Thân thiện', oval:'Tò mò', happy:'Vui ^^', wink:'Nháy mắt', heart:'Yêu thích', bars:'Tập trung', squint:'Phấn khích >&lt;', star:'Hào hứng ★', big:'Ngưỡng mộ', sleepy:'Buồn ngủ', sad:'Buồn', determined:'Quyết tâm', side:'Liếc', dizzy:'Choáng xx', cool:'Ngầu 😎', pixel:'Pixel', think:'Đang nghĩ…' } },
-  eyeC:  { label:'Màu mắt', items:{ auto:'Tự động', yellow:'Vàng', pink:'Hồng', white:'Trắng' } },
+  eyeC:  { label:'Màu mắt (ô đầu = tự động)', swatch:true, items:{ auto:'linear-gradient(135deg,#3ee6e8 50%,#1f2a5c 50%)',
+    cyan:'#3ee6e8', green:'#6dfb9a', lime:'#c6ff5e', yellow:'#ffe066', orange:'#ffb057', red:'#ff5c6c',
+    pink:'#ff7eb6', purple:'#c49bff', blue:'#6fb6ff', white:'#ffffff', navy:NAVY } },
   mouth: { label:'Miệng', items:{ smile:'Mỉm cười', grin:'Cười tươi', cat:'Mèo :3', flat:'Nghiêm túc', open:'Ngạc nhiên', laugh:'Cười lớn', tongue:'Lè lưỡi', smirk:'Nhếch mép', wavy:'Lo lắng', sad:'Buồn', kiss:'Chu môi', grille:'Loa robot', talk:'Đang nói', none:'Không' } },
   blush: { label:'Má hồng', items:{ off:'Không', on:'Có' } },
   pods:  { label:'Tai bên', items:{ dark:'Tối', accent:'Màu nhấn', none:'Không' } },
@@ -167,7 +169,7 @@ function svgMarkup(s) {
   // màn hình mặt
   const fw = ['wide','tv','oct','chin'].includes(s.shape) ? 136 : 112, fx = 128 - fw/2;
   const faceFill = { navy:NAVY, indigo:'#2b2459', dark:DARK, light:'#f4f6f9' }[s.face];
-  const ink = { auto: s.face === 'light' ? NAVY : GLOW, yellow:'#ffe066', pink:'#ff7eb6', white:'#ffffff' }[s.eyeC];
+  const ink = s.eyeC === 'auto' ? (s.face === 'light' ? NAVY : GLOW) : OPTIONS.eyeC.items[s.eyeC];
   p.push(`<rect x="${fx}" y="112" width="${fw}" height="72" rx="30" fill="${F(faceFill)}"/>`);
   p.push(`<rect x="${fx+8}" y="116" width="${fw-16}" height="26" rx="13" fill="#fff" opacity=".08"/>`);
   if (s.face !== 'light') p.push(`<path d="M${fx+14} 124 Q${fx+20} 116 ${fx+34} 116" stroke="#fff" stroke-opacity=".25" stroke-width="5" stroke-linecap="round" fill="none"/>`);
