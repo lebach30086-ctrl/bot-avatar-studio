@@ -32,6 +32,9 @@
   .opts input:focus-visible + span { outline:2px solid var(--brand); }
   .swatch span { width:32px; height:32px; padding:0; border-radius:50%; border:2px solid #fff; box-shadow:0 0 0 1px var(--line); }
   .swatch input:checked + span { box-shadow:0 0 0 2px var(--brand); }
+  .tpl { display:grid; grid-template-columns:repeat(6, 1fr); gap:8px; }
+  .tpl button { padding:4px; border-radius:10px; aspect-ratio:1; }
+  .tpl svg { width:100%; height:100%; display:block; }
   input[type=text] { font:inherit; width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:8px; }
   @media (max-width:800px){ main{ grid-template-columns:1fr; padding:16px; } }
 </style>
@@ -57,6 +60,7 @@
 
   <section class="card" id="controls">
     <fieldset><legend>Tên bot</legend><input type="text" id="name" value="Design System"></fieldset>
+    <fieldset><legend>Mẫu có sẵn</legend><div class="tpl" id="tpl"></div></fieldset>
   </section>
 </main>
 
@@ -276,14 +280,40 @@ document.getElementById('png').onclick = async () => {
     alert('Không tải được ảnh: ' + e.message);
   }
 };
+const syncInputs = () => { for (const key in OPTIONS) document.querySelector(`input[name=${key}][value=${state[key]}]`).checked = true; };
+
+// 12 mẫu robot có sẵn (không chân đế); thiếu key nào thì lấy từ TPL_BASE
+const TPL_BASE = { top:'none', cap:'none', face:'indigo', eyeC:'auto', mouth:'none', blush:'off', ear:'block', pods:'accent', detail:'none' };
+const TEMPLATES = [
+  { color:'blue',   accent:'orange', shape:'oct',      top:'horns',   cap:'pill', eyes:'happy', eyeC:'white',  ear:'grille', detail:'lines', bg:'sky' },
+  { color:'yellow', accent:'pink',   shape:'tv',       top:'horns',   eyes:'bars',  eyeC:'pink',   bg:'peach' },
+  { color:'teal',   accent:'yellow', shape:'chin',     top:'horns',   eyes:'squint', ear:'grille', detail:'lines', bg:'mint' },
+  { color:'pink',   accent:'purple', shape:'squircle', top:'horns',   cap:'dome', eyes:'happy', eyeC:'yellow', detail:'dots', bg:'lemon' },
+  { color:'coral',  accent:'teal',   shape:'chin',     top:'gem',     eyes:'bars',  eyeC:'yellow', ear:'grille', bg:'sky' },
+  { color:'purple', accent:'orange', shape:'cat',      eyes:'happy', eyeC:'white',  pods:'none', detail:'dots', bg:'pink' },
+  { color:'orange', accent:'teal',   shape:'oct',      top:'double',  cap:'pill', eyes:'heart', pods:'none', bg:'mint' },
+  { color:'coral',  accent:'teal',   shape:'square',   eyes:'oval',  mouth:'smile', ear:'grille', bg:'lavender' },
+  { color:'sky',    accent:'pink',   shape:'round',    top:'double',  cap:'pill', eyes:'happy', eyeC:'white',  mouth:'cat', ear:'grille', bg:'peach' },
+  { color:'purple', accent:'yellow', shape:'round',    top:'fins',    cap:'pill', eyes:'happy', eyeC:'pink',   bg:'lemon' },
+  { color:'teal',   accent:'coral',  shape:'wide',     cap:'dome', eyes:'happy', eyeC:'white',  mouth:'grille', blush:'on', ear:'antenna', bg:'pink' },
+  { color:'pink',   accent:'teal',   shape:'squircle', top:'fins',    cap:'pill', eyes:'happy', eyeC:'yellow', mouth:'cat', bg:'mint' },
+].map(t => ({ ...TPL_BASE, ...t }));
+const tplBox = document.getElementById('tpl');
+TEMPLATES.forEach((t, i) => {
+  const b = document.createElement('button');
+  b.setAttribute('aria-label', `Mẫu ${i + 1}`);
+  b.innerHTML = `<svg viewBox="0 0 256 256">${svgMarkup({ ...t, style:'three' })}</svg>`;
+  b.onclick = () => { Object.assign(state, t); syncInputs(); render(); };   // giữ phong cách đang chọn
+  tplBox.appendChild(b);
+});
+
 document.getElementById('random').onclick = () => {
   for (const [key, o] of Object.entries(OPTIONS)) {
     if (key === 'style') continue;   // giữ phong cách đang chọn
     const keys = Object.keys(o.items);
     state[key] = keys[Math.floor(Math.random() * keys.length)];
-    document.querySelector(`input[name=${key}][value=${state[key]}]`).checked = true;
   }
-  render();
+  syncInputs(); render();
 };
 render();
 </script>
