@@ -143,7 +143,6 @@ function svgMarkup(s) {
   if (s.top === 'horns') p.push(fin(22));
   if (s.top === 'antenna') p.push(`<path d="M128 ${T+4} V${T-40}" stroke="${shade}" stroke-width="7" stroke-linecap="round"/><circle cx="128" cy="${T-44}" r="11" fill="${F(main)}"/>`);
   if (s.top === 'double')  p.push(`<path d="M112 ${T+8} L94 ${T-36} M144 ${T+8} L162 ${T-36}" stroke="${shade}" stroke-width="6" stroke-linecap="round"/><circle cx="92" cy="${T-40}" r="11" fill="${F(main)}"/><circle cx="164" cy="${T-40}" r="11" fill="${F(main)}"/>`);
-  let ears = '';
   if (s.pods !== 'none') {
     const pc = { dark:DARK, accent:ac, body:main }[s.pods], f = F(pc), hole = `fill="#000" opacity=".22"`;
     // vẽ tai trái quanh mép L rồi lật gương sang phải (mọi dáng đầu đều đối xứng qua x=128)
@@ -157,11 +156,13 @@ function svgMarkup(s) {
       wing:   `<path d="M${L+10} 160 Q${L-26} 156 ${L-34} 104 Q${L-4} 116 ${L+10} 122 Z" fill="${f}"/>`,
       antenna:`<path d="M${L-6} 136 L${L-24} 108" stroke="${F(pc)}" stroke-width="6" stroke-linecap="round"/><circle cx="${L-26}" cy="104" r="8" fill="${F(ac)}"/><rect x="${L-12}" y="124" width="24" height="36" rx="9" fill="${f}"/>`,
     }[s.ear];
-    ears = ear + `<g transform="translate(256 0) scale(-1 1)">${ear}</g>`;
+    // đặt sau đầu, lệch ra ngoài để vẫn thấy rõ hình dạng tai
+    const dx = Math.min(10, L - 36);   // dáng bầu dẹt đã sát mép khung thì không đẩy ra
+    p.push(`<g transform="translate(${-dx} 0)">${ear}</g>`, `<g transform="translate(${256+dx} 0) scale(-1 1)">${ear}</g>`);
   }
 
   // đầu 2 tông
-  p.push(`<g clip-path="url(#${id})"><rect width="256" height="256" fill="url(#${id}hd)"/></g>`, ears);   // tai gắn đè lên mép đầu
+  p.push(`<g clip-path="url(#${id})"><rect width="256" height="256" fill="url(#${id}hd)"/></g>`);
   if (s.shape === 'cat') p.push(`<path d="M60 70 L64 98 L86 84 Z M196 70 L192 98 L170 84 Z" fill="${F(ac)}"/>`);
   if (s.detail === 'lines') p.push(`<path d="M104 ${T+14} H152 M112 ${T+24} H144" stroke="#fff" stroke-opacity=".45" stroke-width="4" stroke-linecap="round"/><path d="M${L+12} 150 V176 M${R-12} 150 V176" stroke="#000" stroke-opacity=".15" stroke-width="4" stroke-linecap="round"/>`);
   if (s.detail === 'dots') p.push([0,1,2].map(i => `<circle cx="${L+14}" cy="${146+i*12}" r="3.5" fill="#000" opacity=".18"/><circle cx="${R-14}" cy="${146+i*12}" r="3.5" fill="#000" opacity=".18"/>`).join('') + `<circle cx="112" cy="${T+18}" r="3.5" fill="#fff" opacity=".5"/><circle cx="128" cy="${T+16}" r="3.5" fill="#fff" opacity=".5"/><circle cx="144" cy="${T+18}" r="3.5" fill="#fff" opacity=".5"/>`);
