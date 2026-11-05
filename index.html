@@ -75,7 +75,7 @@
 <script>
 const DARK = '#2b2d3a', NAVY = '#1f2a5c', GLOW = '#3ee6e8', BLUSH = '#f2559a';
 const OPTIONS = {
-  style: { label:'Phong cách', items:{ three:'3D', pixel:'Pixel art', ascii:'ASCII' } },
+  style: { label:'Phong cách', items:{ three:'3D', ascii:'ASCII' } },
   color: { label:'Màu thân', swatch:true, items:{
     white:['#f4f6f9','#cfd6e0'], blue:['#5aaaf2','#3a80d4'], sky:['#6fd0f5','#3fa9d6'], teal:['#2fbfae','#1f9a8c'],
     green:['#8fd150','#68ad2c'], yellow:['#f9c23c','#e09a12'], orange:['#f7a928','#dc860b'], coral:['#f57a6b','#d9554a'],
@@ -229,7 +229,7 @@ function svgMarkup(s) {
   return p.join('');
 }
 
-// Vẽ markup 3D xuống lưới n×n điểm ảnh để dựng lại thành pixel/ASCII
+// Vẽ markup 3D xuống lưới n×n điểm ảnh để dựng lại thành ASCII
 async function raster(markup, n) {
   const img = new Image();
   img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="${n}" height="${n}">${markup}</svg>`);
@@ -240,18 +240,6 @@ async function raster(markup, n) {
 }
 const hex = (r, g, b) => '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
 async function stylize(s) {
-  if (s.style === 'pixel') {
-    const n = 32, k = 256 / n, d = await raster(svgMarkup(s), n), out = [];
-    const q = v => Math.min(255, Math.round(v / 24) * 24);           // giảm màu cho ra chất pixel
-    const at = (x, y) => { const i = (y * n + x) * 4; return d[i+3] < 128 ? null : hex(q(d[i]), q(d[i+1]), q(d[i+2])); };
-    for (let y = 0; y < n; y++) for (let x = 0; x < n;) {
-      const c = at(x, y); let w = 1;
-      while (x + w < n && at(x + w, y) === c) w++;                   // gộp các ô cùng màu liền nhau
-      if (c) out.push(`<rect x="${x*k}" y="${y*k}" width="${w*k}" height="${k}" fill="${c}"/>`);
-      x += w;
-    }
-    return `<g shape-rendering="crispEdges">${out.join('')}</g>`;
-  }
   if (s.style === 'ascii') {
     const n = 30, k = 256 / n, d = await raster(svgMarkup({ ...s, bg:'none' }), n), ramp = '.:-=+*#%@';
     const lift = v => Math.round(v * .8 + 255 * .2);   // làm sáng màu chữ trên nền tối
