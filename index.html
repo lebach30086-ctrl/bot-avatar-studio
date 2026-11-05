@@ -89,13 +89,12 @@ const OPTIONS = {
   eyeC:  { label:'Màu mắt', items:{ auto:'Tự động', yellow:'Vàng', pink:'Hồng', white:'Trắng' } },
   mouth: { label:'Miệng', items:{ smile:'Mỉm cười', grin:'Cười tươi', cat:'Mèo :3', flat:'Nghiêm túc', open:'Ngạc nhiên', laugh:'Cười lớn', tongue:'Lè lưỡi', smirk:'Nhếch mép', wavy:'Lo lắng', sad:'Buồn', kiss:'Chu môi', grille:'Loa robot', talk:'Đang nói', none:'Không' } },
   blush: { label:'Má hồng', items:{ off:'Không', on:'Có' } },
-  phones:{ label:'Tai nghe', items:{ none:'Không', studio:'Chụp tai', mic:'Có mic (CSKH)', gaming:'Gaming', cat:'Tai mèo', retro:'Retro', buds:'Earbuds' } },
   pods:  { label:'Tai bên', items:{ dark:'Tối', accent:'Màu nhấn', none:'Không' } },
   detail:{ label:'Hoa văn', items:{ none:'Không', lines:'Rãnh', dots:'Đinh tán' } },
   bg:    { label:'Nền', items:{ soft:'Tròn nhạt', solid:'Tròn đậm', none:'Trong suốt' } },
 };
 const state = { color:'white', accent:'cyan', shape:'round', top:'fins', cap:'pill', face:'navy', eyes:'dot', eyeC:'auto', mouth:'smile',
-  blush:'off', phones:'none', pods:'dark', detail:'none', bg:'soft' };
+  blush:'off', pods:'dark', detail:'none', bg:'soft' };
 
 const controls = document.getElementById('controls');
 for (const [key, o] of Object.entries(OPTIONS)) {
@@ -149,15 +148,7 @@ function svgMarkup(s) {
   if (s.top === 'horns') p.push(fin(22));
   if (s.top === 'antenna') p.push(`<path d="M128 ${T+4} V${T-40}" stroke="${shade}" stroke-width="7" stroke-linecap="round"/><circle cx="128" cy="${T-44}" r="11" fill="${F(main)}"/>`);
   if (s.top === 'double')  p.push(`<path d="M112 ${T+8} L94 ${T-36} M144 ${T+8} L162 ${T-36}" stroke="${shade}" stroke-width="6" stroke-linecap="round"/><circle cx="92" cy="${T-40}" r="11" fill="${F(main)}"/><circle cx="164" cy="${T-40}" r="11" fill="${F(main)}"/>`);
-  // tai nghe: quai (sau đầu)
-  const ph = s.phones;
-  const band = (w, c) => `<path d="M${L-2} 132 V${T+6} Q${L-2} ${T-22} ${L+26} ${T-22} H${R-26} Q${R+2} ${T-22} ${R+2} ${T+6} V132" stroke="${F(c)}" stroke-width="${w}" stroke-linecap="round" fill="none"/>`;
-  if (ph === 'studio') p.push(band(14, ac));
-  if (ph === 'mic')    p.push(band(8, DARK));
-  if (ph === 'gaming') p.push(band(18, DARK), `<path d="M${L+30} ${T-22} H${R-30}" stroke="${F(ac)}" stroke-width="4" stroke-linecap="round"/>`);
-  if (ph === 'cat')    p.push(`<path d="M84 ${T-12} L94 ${T-52} L118 ${T-20} Z M172 ${T-12} L162 ${T-52} L138 ${T-20} Z" fill="${F(ac)}"/><path d="M92 ${T-20} L96 ${T-40} L108 ${T-22} Z M164 ${T-20} L160 ${T-40} L148 ${T-22} Z" fill="#ff7eb6"/>`, band(12, ac));
-  if (ph === 'retro')  p.push(band(5, '#9aa3b2'));
-  if (ph === 'none' && s.pods !== 'none') {
+  if (s.pods !== 'none') {
     const pc = s.pods === 'dark' ? DARK : ac;
     p.push(`<rect x="${L-14}" y="112" width="30" height="60" rx="14" fill="${F(pc)}"/><rect x="${R-16}" y="112" width="30" height="60" rx="14" fill="${F(pc)}"/>`);
   }
@@ -221,15 +212,6 @@ function svgMarkup(s) {
   }[s.mouth]);
   p.push('</g>');
 
-  // tai nghe: chụp tai + mic (trước đầu)
-  const cups = (w, h, c) => `<rect x="${L-w/2-2}" y="${142-h/2}" width="${w}" height="${h}" rx="${w/2.4}" fill="${F(c)}"/><rect x="${R-w/2+2}" y="${142-h/2}" width="${w}" height="${h}" rx="${w/2.4}" fill="${F(c)}"/>`;
-  const mic = (tip) => `<path d="M${L-4} 160 Q${L} 186 100 182" stroke="${F(DARK)}" stroke-width="5" stroke-linecap="round" fill="none"/><rect x="94" y="175" width="18" height="13" rx="6.5" fill="${F(tip)}"/>`;
-  if (ph === 'studio') p.push(cups(40, 66, ac), `<rect x="${L+12}" y="116" width="6" height="52" rx="3" fill="#000" opacity=".15"/><rect x="${R-18}" y="116" width="6" height="52" rx="3" fill="#000" opacity=".15"/>`);
-  if (ph === 'mic')    p.push(cups(30, 52, ac), mic(DARK));
-  if (ph === 'gaming') p.push(cups(44, 70, DARK), `<rect x="${L-24}" y="124" width="6" height="36" rx="3" fill="${F(ac)}"/><rect x="${R+18}" y="124" width="6" height="36" rx="3" fill="${F(ac)}"/>`, mic(ac));
-  if (ph === 'cat')    p.push(cups(36, 58, ac), `<circle cx="${L-2}" cy="142" r="7" fill="#ff7eb6"/><circle cx="${R+2}" cy="142" r="7" fill="#ff7eb6"/>`);
-  if (ph === 'retro')  p.push(`<rect x="${L-8}" y="134" width="16" height="16" rx="3" fill="${F('#9aa3b2')}"/><rect x="${R-8}" y="134" width="16" height="16" rx="3" fill="${F('#9aa3b2')}"/><circle cx="${L-4}" cy="142" r="20" fill="${F('#f7a928')}"/><circle cx="${R+4}" cy="142" r="20" fill="${F('#f7a928')}"/>`);
-  if (ph === 'buds')   p.push([L, R].map(x => `<rect x="${x-5}" y="142" width="10" height="34" rx="5" fill="${F(ac)}"/><circle cx="${x}" cy="140" r="15" fill="${F(ac)}"/><circle cx="${x}" cy="140" r="6" fill="${DARK}" opacity=".6"/>`).join(''));
   p.push(`</g>`);
   {
     defs.push(`<radialGradient id="${id}hd" gradientUnits="userSpaceOnUse" cx="${L+(R-L)*.38}" cy="${T+50}" r="150"><stop offset="0" stop-color="${mix(main,.45)}"/><stop offset=".45" stop-color="${main}"/><stop offset=".85" stop-color="${shade}"/><stop offset="1" stop-color="${mix(shade,-.2)}"/></radialGradient>`,
