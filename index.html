@@ -79,7 +79,8 @@ const OPTIONS = {
     pink:'#ff7eb6', purple:'#c49bff', blue:'#6fb6ff', white:'#ffffff', navy:NAVY } },
   mouth: { label:'Miệng', items:{ smile:'Mỉm cười', grin:'Cười tươi', cat:'Mèo :3', flat:'Nghiêm túc', open:'Ngạc nhiên', laugh:'Cười lớn', tongue:'Lè lưỡi', smirk:'Nhếch mép', wavy:'Lo lắng', sad:'Buồn', kiss:'Chu môi', grille:'Loa robot', talk:'Đang nói', none:'Không' } },
   blush: { label:'Má hồng', items:{ off:'Không', on:'Có' } },
-  pods:  { label:'Tai bên', items:{ dark:'Tối', accent:'Màu nhấn', none:'Không' } },
+  ear:   { label:'Kiểu tai', items:{ block:'Khối', round:'Tròn', ring:'Vòng', bolt:'Bu-lông', stack:'Bậc', grille:'Loa', wing:'Cánh', antenna:'Ăng-ten nhỏ' } },
+  pods:  { label:'Màu tai', items:{ dark:'Tối', accent:'Màu nhấn', body:'Màu thân', none:'Không có tai' } },
   detail:{ label:'Hoa văn', items:{ none:'Không', lines:'Rãnh', dots:'Đinh tán' } },
   bg:    { label:'Nền (ô đầu = trong suốt, ô 2 = theo màu nhấn)', swatch:true, items:{ none:'repeating-conic-gradient(#d9dde5 0 25%, #fff 0 50%) 50%/10px 10px',
     soft:'linear-gradient(135deg,#d6fbfb,#e4ecff)', sky:'#e3f0ff', mint:'#dcf8ec', lemon:'#fff6d1', peach:'#ffe6d9',
@@ -88,7 +89,7 @@ const OPTIONS = {
     purple:'#8d63c9', navy:'#1f2a5c', night:'#0b1020', black:'#1a1a1f' } },
 };
 const state = { style:'three', color:'white', accent:'cyan', shape:'round', top:'fins', cap:'pill', face:'navy', eyes:'dot', eyeC:'auto', mouth:'none',
-  blush:'off', pods:'dark', detail:'none', bg:'soft' };
+  blush:'off', ear:'block', pods:'dark', detail:'none', bg:'soft' };
 
 const controls = document.getElementById('controls');
 for (const [key, o] of Object.entries(OPTIONS)) {
@@ -142,13 +143,25 @@ function svgMarkup(s) {
   if (s.top === 'horns') p.push(fin(22));
   if (s.top === 'antenna') p.push(`<path d="M128 ${T+4} V${T-40}" stroke="${shade}" stroke-width="7" stroke-linecap="round"/><circle cx="128" cy="${T-44}" r="11" fill="${F(main)}"/>`);
   if (s.top === 'double')  p.push(`<path d="M112 ${T+8} L94 ${T-36} M144 ${T+8} L162 ${T-36}" stroke="${shade}" stroke-width="6" stroke-linecap="round"/><circle cx="92" cy="${T-40}" r="11" fill="${F(main)}"/><circle cx="164" cy="${T-40}" r="11" fill="${F(main)}"/>`);
+  let ears = '';
   if (s.pods !== 'none') {
-    const pc = s.pods === 'dark' ? DARK : ac;
-    p.push(`<rect x="${L-14}" y="112" width="30" height="60" rx="14" fill="${F(pc)}"/><rect x="${R-16}" y="112" width="30" height="60" rx="14" fill="${F(pc)}"/>`);
+    const pc = { dark:DARK, accent:ac, body:main }[s.pods], f = F(pc), hole = `fill="#000" opacity=".22"`;
+    // vẽ tai trái quanh mép L rồi lật gương sang phải (mọi dáng đầu đều đối xứng qua x=128)
+    const ear = {
+      block:  `<rect x="${L-14}" y="112" width="30" height="60" rx="14" fill="${f}"/>`,
+      round:  `<circle cx="${L-2}" cy="142" r="24" fill="${f}"/><circle cx="${L-6}" cy="142" r="10" ${hole}/>`,
+      ring:   `<circle cx="${L-2}" cy="142" r="24" fill="${f}"/><circle cx="${L-6}" cy="142" r="13" fill="${F(main)}"/>`,
+      bolt:   `<path d="M${L-24} 142 L${L-13} 123 H${L+9} L${L+20} 142 L${L+9} 161 H${L-13} Z" fill="${f}"/><circle cx="${L-4}" cy="142" r="7" ${hole}/>`,
+      stack:  `<rect x="${L-10}" y="114" width="24" height="56" rx="10" fill="${f}"/><rect x="${L-22}" y="126" width="18" height="32" rx="8" fill="${f}"/><rect x="${L-22}" y="126" width="18" height="32" rx="8" ${hole}/>`,
+      grille: `<rect x="${L-18}" y="110" width="34" height="64" rx="12" fill="${f}"/><path d="M${L-11} 126 H${L+2} M${L-11} 136 H${L+2} M${L-11} 146 H${L+2} M${L-11} 156 H${L+2}" stroke="#000" stroke-opacity=".25" stroke-width="4" stroke-linecap="round"/>`,
+      wing:   `<path d="M${L+10} 160 Q${L-26} 156 ${L-34} 104 Q${L-4} 116 ${L+10} 122 Z" fill="${f}"/>`,
+      antenna:`<path d="M${L-6} 136 L${L-24} 108" stroke="${F(pc)}" stroke-width="6" stroke-linecap="round"/><circle cx="${L-26}" cy="104" r="8" fill="${F(ac)}"/><rect x="${L-12}" y="124" width="24" height="36" rx="9" fill="${f}"/>`,
+    }[s.ear];
+    ears = ear + `<g transform="translate(256 0) scale(-1 1)">${ear}</g>`;
   }
 
   // đầu 2 tông
-  p.push(`<g clip-path="url(#${id})"><rect width="256" height="256" fill="url(#${id}hd)"/></g>`);
+  p.push(`<g clip-path="url(#${id})"><rect width="256" height="256" fill="url(#${id}hd)"/></g>`, ears);   // tai gắn đè lên mép đầu
   if (s.shape === 'cat') p.push(`<path d="M60 70 L64 98 L86 84 Z M196 70 L192 98 L170 84 Z" fill="${F(ac)}"/>`);
   if (s.detail === 'lines') p.push(`<path d="M104 ${T+14} H152 M112 ${T+24} H144" stroke="#fff" stroke-opacity=".45" stroke-width="4" stroke-linecap="round"/><path d="M${L+12} 150 V176 M${R-12} 150 V176" stroke="#000" stroke-opacity=".15" stroke-width="4" stroke-linecap="round"/>`);
   if (s.detail === 'dots') p.push([0,1,2].map(i => `<circle cx="${L+14}" cy="${146+i*12}" r="3.5" fill="#000" opacity=".18"/><circle cx="${R-14}" cy="${146+i*12}" r="3.5" fill="#000" opacity=".18"/>`).join('') + `<circle cx="112" cy="${T+18}" r="3.5" fill="#fff" opacity=".5"/><circle cx="128" cy="${T+16}" r="3.5" fill="#fff" opacity=".5"/><circle cx="144" cy="${T+18}" r="3.5" fill="#fff" opacity=".5"/>`);
