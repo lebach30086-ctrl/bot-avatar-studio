@@ -32,11 +32,6 @@
   .swatch span { width:32px; height:32px; padding:0; border-radius:50%; border:2px solid #fff; box-shadow:0 0 0 1px var(--line); }
   .swatch input:checked + span { box-shadow:0 0 0 2px var(--brand); }
   input[type=text] { font:inherit; width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:8px; }
-  /* chat mock giống ngữ cảnh thật */
-  .chat { width:100%; background:#f0f2f5; border-radius:12px; padding:16px; display:flex; gap:10px; }
-  .chat .name { font-size:13px; color:var(--muted); display:flex; gap:6px; align-items:center; }
-  .chat .tag { font-size:11px; background:#fff3d6; color:#b07800; padding:1px 6px; border-radius:4px; font-weight:600; }
-  .chat .bubble { margin-top:6px; background:#e4e7ec; border-radius:10px; padding:10px 14px; }
   @media (max-width:800px){ main{ grid-template-columns:1fr; padding:16px; } }
 </style>
 </head>
@@ -57,18 +52,10 @@
       <button id="random">🎲 Ngẫu nhiên</button>
       <button id="png" class="primary">Tải PNG 512</button>
     </div>
-    <div class="chat">
-      <svg id="s36" width="36" height="36" viewBox="0 0 256 256" style="flex:none"></svg>
-      <div>
-        <div class="name"><b id="chatName">Design System</b><span class="tag">BOT</span> | <span id="chatRole">Design system infomation</span></div>
-        <div class="bubble">🚀 Released @mobio/ds-v5x v0.20.2</div>
-      </div>
-    </div>
   </section>
 
   <section class="card" id="controls">
     <fieldset><legend>Tên bot</legend><input type="text" id="name" value="Design System"></fieldset>
-    <fieldset><legend>Mô tả</legend><input type="text" id="role" value="Design system infomation"></fieldset>
   </section>
 </main>
 
@@ -258,7 +245,7 @@ let ticket = 0;
 async function render() {
   const t = ++ticket, inner = await stylize(state);
   if (t !== ticket) return;                                           // bỏ kết quả cũ nếu đã đổi tùy chọn
-  for (const id of ['avatar','s96','s40','s24','s36']) document.getElementById(id).innerHTML = inner;
+  for (const id of ['avatar','s96','s40','s24']) document.getElementById(id).innerHTML = inner;
 }
 const full = async () => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="512" height="512">${await stylize(state)}</svg>`;
 const fileName = () => (document.getElementById('name').value.trim() || 'bot').toLowerCase().replace(/\s+/g,'-');
@@ -287,8 +274,6 @@ document.getElementById('random').onclick = () => {
   }
   render();
 };
-document.getElementById('name').oninput = e => document.getElementById('chatName').textContent = e.target.value;
-document.getElementById('role').oninput = e => document.getElementById('chatRole').textContent = e.target.value;
 render();
 </script>
 </body>
