@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bot Avatar Studio</title>
+<style>
+  :root { --bg:#f5f7fb; --card:#fff; --line:#e5e8ef; --text:#1f2633; --muted:#6b7385; --brand:#2f6bff; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif; background:var(--bg); color:var(--text); }
+  header { padding:20px 32px; border-bottom:1px solid var(--line); background:var(--card); }
+  header h1 { margin:0; font-size:20px; }
+  header p { margin:4px 0 0; color:var(--muted); }
+  main { display:grid; grid-template-columns:minmax(320px,440px) 1fr; gap:24px; padding:24px 32px; max-width:1200px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px; }
+  .stage { position:sticky; top:16px; align-self:start; display:flex; flex-direction:column; align-items:center; gap:16px; }
+  #avatar { width:280px; height:280px; }
+  .sizes { display:flex; align-items:end; gap:16px; }
+  .sizes svg { display:block; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+  button { font:inherit; border:1px solid var(--line); background:#fff; border-radius:8px; padding:8px 14px; cursor:pointer; }
+  button:hover { border-color:var(--brand); }
+  button.primary { background:var(--brand); color:#fff; border-color:var(--brand); }
+  fieldset { border:0; padding:0; margin:0 0 16px; }
+  legend { font-weight:600; margin-bottom:8px; }
+  .opts { display:flex; flex-wrap:wrap; gap:6px; }
+  .opts label { cursor:pointer; }
+  .opts input { position:absolute; opacity:0; }
+  .opts span { display:inline-block; padding:6px 10px; border:1px solid var(--line); border-radius:999px; }
+  .opts input:checked + span { border-color:var(--brand); background:#eef3ff; color:var(--brand); }
+  .opts input:focus-visible + span { outline:2px solid var(--brand); }
+  .swatch span { width:32px; height:32px; padding:0; border-radius:50%; border:2px solid #fff; box-shadow:0 0 0 1px var(--line); }
+  .swatch input:checked + span { box-shadow:0 0 0 2px var(--brand); }
+  input[type=text] { font:inherit; width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:8px; }
+  /* chat mock giống ngữ cảnh thật */
+  .chat { width:100%; background:#f0f2f5; border-radius:12px; padding:16px; display:flex; gap:10px; }
+  .chat .name { font-size:13px; color:var(--muted); display:flex; gap:6px; align-items:center; }
+  .chat .tag { font-size:11px; background:#fff3d6; color:#b07800; padding:1px 6px; border-radius:4px; font-weight:600; }
+  .chat .bubble { margin-top:6px; background:#e4e7ec; border-radius:10px; padding:10px 14px; }
+  @media (max-width:800px){ main{ grid-template-columns:1fr; padding:16px; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>🤖 Bot Avatar Studio</h1>
+  <p>Tạo avatar có "hồn" cho bot-team — chọn tính cách, màu, phụ kiện rồi tải về.</p>
+</header>
+<main>
+  <section class="card stage">
+    <svg id="avatar" viewBox="0 0 256 256" role="img" aria-label="Avatar preview"></svg>
+    <div class="sizes" aria-label="Kích thước thực tế">
+      <svg id="s96" width="96" height="96" viewBox="0 0 256 256"></svg>
+      <svg id="s40" width="40" height="40" viewBox="0 0 256 256"></svg>
+      <svg id="s24" width="24" height="24" viewBox="0 0 256 256"></svg>
+    </div>
+    <div class="row">
+      <button id="random">🎲 Ngẫu nhiên</button>
+      <button id="png" class="primary">Tải PNG 512</button>
+    </div>
+    <div class="chat">
+      <svg id="s36" width="36" height="36" viewBox="0 0 256 256" style="flex:none"></svg>
+      <div>
+        <div class="name"><b id="chatName">Design System</b><span class="tag">BOT</span> | <span id="chatRole">Design system infomation</span></div>
+        <div class="bubble">🚀 Released @mobio/ds-v5x v0.20.2</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" id="controls">
+    <fieldset><legend>Tên bot</legend><input type="text" id="name" value="Design System"></fieldset>
+    <fieldset><legend>Mô tả</legend><input type="text" id="role" value="Design system infomation"></fieldset>
+  </section>
+</main>
+
+<script>
+const DARK = '#2b2d3a', NAVY = '#1f2a5c', GLOW = '#3ee6e8', BLUSH = '#f2559a';
+const OPTIONS = {
+  color: { label:'Màu thân', swatch:true, items:{
+    white:['#f4f6f9','#cfd6e0'], blue:['#5aaaf2','#3a80d4'], sky:['#6fd0f5','#3fa9d6'], teal:['#2fbfae','#1f9a8c'],
+    green:['#8fd150','#68ad2c'], yellow:['#f9c23c','#e09a12'], orange:['#f7a928','#dc860b'], coral:['#f57a6b','#d9554a'],
+    red:['#f2704f','#cf4a2e'], pink:['#f2559a','#c93777'], purple:['#8d63c9','#6a44a6'], ice:['#c3d6e4','#93b0c6'] } },
+  accent:{ label:'Màu điểm nhấn', swatch:true, items:{ cyan:GLOW, blue:'#3b82f6', teal:'#2fbfae', yellow:'#f9c23c', orange:'#f7a928',
+    coral:'#f57a6b', pink:'#f2559a', purple:'#8d63c9', navy:NAVY } },
+  shape: { label:'Dáng đầu', items:{ round:'Tròn', square:'Vuông bo', wide:'Bầu dẹt', tv:'TV', oct:'Bát giác', chin:'Cằm V', cat:'Mèo', squircle:'Squircle' } },
+  top:   { label:'Trên đầu', items:{ fins:'Tai vây', horns:'Tai mèo', antenna:'Ăng-ten', double:'Râu đôi', band:'Tai nghe chụp', gem:'Viên đá', none:'Không' } },
+  cap:   { label:'Đèn đỉnh', items:{ pill:'Đèn', dome:'Vòm tối', none:'Không' } },
+  face:  { label:'Màn hình mặt', items:{ navy:'Xanh đêm', indigo:'Tím than', dark:'Đen', light:'Sáng' } },
+  eyes:  { label:'Ánh mắt (tính cách)', items:{ dot:'Thân thiện', oval:'Tò mò', happy:'Vui ^^', wink:'Nháy mắt', heart:'Yêu thích', bars:'Tập trung', squint:'Phấn khích >&lt;', star:'Hào hứng ★', big:'Ngưỡng mộ', sleepy:'Buồn ngủ', sad:'Buồn', determined:'Quyết tâm', side:'Liếc', dizzy:'Choáng xx', cool:'Ngầu 😎', pixel:'Pixel', think:'Đang nghĩ…' } },
+  eyeC:  { label:'Màu mắt', items:{ auto:'Tự động', yellow:'Vàng', pink:'Hồng', white:'Trắng' } },
+  mouth: { label:'Miệng', items:{ smile:'Mỉm cười', grin:'Cười tươi', cat:'Mèo :3', flat:'Nghiêm túc', open:'Ngạc nhiên', laugh:'Cười lớn', tongue:'Lè lưỡi', smirk:'Nhếch mép', wavy:'Lo lắng', sad:'Buồn', kiss:'Chu môi', grille:'Loa robot', talk:'Đang nói', none:'Không' } },
+  blush: { label:'Má hồng', items:{ off:'Không', on:'Có' } },
+  pods:  { label:'Tai bên', items:{ dark:'Tối', accent:'Màu nhấn', none:'Không' } },
+  detail:{ label:'Hoa văn', items:{ none:'Không', lines:'Rãnh', dots:'Đinh tán' } },
+  bg:    { label:'Nền', items:{ soft:'Tròn nhạt', solid:'Tròn đậm', none:'Trong suốt' } },
+};
+const state = { color:'white', accent:'cyan', shape:'round', top:'fins', cap:'pill', face:'navy', eyes:'dot', eyeC:'auto', mouth:'smile',
+  blush:'off', pods:'dark', detail:'none', bg:'soft' };
+
+const controls = document.getElementById('controls');
+for (const [key, o] of Object.entries(OPTIONS)) {
+  const fs = document.createElement('fieldset');
+  fs.innerHTML = `<legend>${o.label}</legend><div class="opts ${o.swatch?'swatch':''}"></div>`;
+  const box = fs.querySelector('.opts');
+  for (const [val, v] of Object.entries(o.items)) {
+    const l = document.createElement('label');
+    const style = o.swatch ? ` style="background:${[].concat(v)[0]}"` : '';
+    l.innerHTML = `<input type="radio" name="${key}" value="${val}" ${state[key]===val?'checked':''} aria-label="${o.swatch?val:v}"><span${style}>${o.swatch?'':v}</span>`;
+    l.querySelector('input').onchange = () => { state[key] = val; render(); };
+    box.appendChild(l);
+  }
+  controls.appendChild(fs);
+}
+
+let uid = 0;
+function svgMarkup(s) {
+  const id = 'hc' + (uid++);
+  const [main, shade] = OPTIONS.color.items[s.color];
+  const ac = OPTIONS.accent.items[s.accent];
+  const defs = [];
+  // mix: t>0 pha trắng, t<0 pha đen
+  const mix = (hex, t) => { const n = parseInt(hex.slice(1), 16), k = t > 0 ? 255 : 0, w = Math.abs(t);
+    return '#' + [16, 8, 0].map(sh => Math.round(((n >> sh) & 255) * (1 - w) + k * w).toString(16).padStart(2, '0')).join(''); };
+  // F: gradient khối 3D cho một màu
+  const F = c => { const g = `${id}g${defs.length}`;
+    defs.push(`<linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${mix(c,.35)}"/><stop offset=".55" stop-color="${c}"/><stop offset="1" stop-color="${mix(c,-.25)}"/></linearGradient>`);
+    return `url(#${g})`; };
+  // dáng đầu: [svg shape, top y (chỗ gắn phụ kiện), left x, right x]
+  const [shape, T, L, R] = {
+    round:   [`<circle cx="128" cy="144" r="82"/>`, 62, 46, 210],
+    square:  [`<rect x="50" y="68" width="156" height="150" rx="46"/>`, 68, 50, 206],
+    wide:    [`<rect x="36" y="82" width="184" height="128" rx="62"/>`, 82, 36, 220],
+    tv:      [`<rect x="44" y="70" width="168" height="144" rx="20"/>`, 70, 44, 212],
+    oct:     [`<path d="M92 64 H164 L212 110 V176 L164 222 H92 L44 176 V110 Z"/>`, 64, 44, 212],
+    chin:    [`<path d="M66 70 H190 Q212 70 212 92 V160 L156 218 H100 L44 160 V92 Q44 70 66 70 Z"/>`, 70, 44, 212],
+    cat:     [`<path d="M48 150 L52 52 L104 80 Q128 74 152 80 L204 52 L208 150 Q206 222 128 222 Q50 222 48 150 Z"/>`, 78, 48, 208],
+    squircle:[`<path d="M128 62 Q208 62 210 142 Q208 222 128 222 Q48 222 46 142 Q48 62 128 62 Z"/>`, 62, 46, 210],
+  }[s.shape];
+  const p = [`<defs><clipPath id="${id}">${shape}</clipPath></defs>`];
+  if (s.bg === 'soft')  p.push(`<circle cx="128" cy="128" r="128" fill="${F(ac)}" opacity=".18"/>`);
+  if (s.bg === 'solid') p.push(`<circle cx="128" cy="128" r="128" fill="${F(ac)}"/>`);
+  p.push(`<ellipse cx="128" cy="230" rx="72" ry="9" fill="#000" opacity=".18" filter="url(#${id}bl)"/>`);
+  p.push(`<g>`);
+
+  // phía sau đầu
+  const fin = (h) => `<path d="M${L+14} ${T+44} Q${L-2} ${T-h*.3} ${L+16} ${T-h} Q${L+40} ${T-h*.4} ${L+44} ${T+20} Z" fill="${F(ac)}"/>`
+                   + `<path d="M${R-14} ${T+44} Q${R+2} ${T-h*.3} ${R-16} ${T-h} Q${R-40} ${T-h*.4} ${R-44} ${T+20} Z" fill="${F(ac)}"/>`;
+  if (s.top === 'fins')  p.push(fin(54));
+  if (s.top === 'horns') p.push(fin(22));
+  if (s.top === 'antenna') p.push(`<path d="M128 ${T+4} V${T-40}" stroke="${shade}" stroke-width="7" stroke-linecap="round"/><circle cx="128" cy="${T-44}" r="11" fill="${F(main)}"/>`);
+  if (s.top === 'double')  p.push(`<path d="M112 ${T+8} L94 ${T-36} M144 ${T+8} L162 ${T-36}" stroke="${shade}" stroke-width="6" stroke-linecap="round"/><circle cx="92" cy="${T-40}" r="11" fill="${F(main)}"/><circle cx="164" cy="${T-40}" r="11" fill="${F(main)}"/>`);
+  if (s.top === 'band') p.push(`<path d="M${L-2} 130 V${T+6} Q${L-2} ${T-22} ${L+26} ${T-22} H${R-26} Q${R+2} ${T-22} ${R+2} ${T+6} V130" stroke="${F(ac)}" stroke-width="14" fill="none"/>`);
+  if (s.pods !== 'none' || s.top === 'band') {
+    const pc = s.top === 'band' ? ac : s.pods === 'dark' ? DARK : ac;
+    const w = s.top === 'band' ? 40 : 30;
+    p.push(`<rect x="${L-w+16}" y="112" width="${w}" height="60" rx="14" fill="${F(pc)}"/><rect x="${R-16}" y="112" width="${w}" height="60" rx="14" fill="${F(pc)}"/>`);
+    if (s.top === 'band') p.push(`<rect x="${L-w+16}" y="112" width="${w}" height="60" rx="14" fill="#000" opacity=".15"/><rect x="${R-16}" y="112" width="${w}" height="60" rx="14" fill="#000" opacity=".15"/>`);
+  }
+
+  // đầu 2 tông
+  p.push(`<g clip-path="url(#${id})"><rect width="256" height="256" fill="url(#${id}hd)"/></g>`);
+  if (s.shape === 'cat') p.push(`<path d="M60 70 L64 98 L86 84 Z M196 70 L192 98 L170 84 Z" fill="${F(ac)}"/>`);
+  if (s.detail === 'lines') p.push(`<path d="M104 ${T+14} H152 M112 ${T+24} H144" stroke="#fff" stroke-opacity=".45" stroke-width="4" stroke-linecap="round"/><path d="M${L+12} 150 V176 M${R-12} 150 V176" stroke="#000" stroke-opacity=".15" stroke-width="4" stroke-linecap="round"/>`);
+  if (s.detail === 'dots') p.push([0,1,2].map(i => `<circle cx="${L+14}" cy="${146+i*12}" r="3.5" fill="#000" opacity=".18"/><circle cx="${R-14}" cy="${146+i*12}" r="3.5" fill="#000" opacity=".18"/>`).join('') + `<circle cx="112" cy="${T+18}" r="3.5" fill="#fff" opacity=".5"/><circle cx="128" cy="${T+16}" r="3.5" fill="#fff" opacity=".5"/><circle cx="144" cy="${T+18}" r="3.5" fill="#fff" opacity=".5"/>`);
+
+  // đỉnh
+  if (s.cap === 'pill') p.push(`<rect x="100" y="${T-4}" width="56" height="22" rx="9" fill="${F(ac)}"/><rect x="108" y="${T}" width="20" height="6" rx="3" fill="#fff" opacity=".6"/>`);
+  if (s.cap === 'dome') p.push(`<path d="M94 ${T+16} Q128 ${T-30} 162 ${T+16} Z" fill="${F(DARK)}"/><ellipse cx="128" cy="${T-1}" rx="12" ry="4" fill="${F(ac)}"/>`);
+  if (s.top === 'gem')  p.push(`<path d="M128 ${T-30} L146 ${T-2} L128 ${T+22} L110 ${T-2} Z" fill="${F(ac)}"/><path d="M128 ${T-30} L146 ${T-2} L128 ${T+22} Z" fill="#000" opacity=".15"/><path d="M120 ${T-6} L128 ${T-20}" stroke="#fff" stroke-opacity=".7" stroke-width="3" stroke-linecap="round"/>`);
+
+  // màn hình mặt
+  const fw = ['wide','tv','oct','chin'].includes(s.shape) ? 136 : 112, fx = 128 - fw/2;
+  const faceFill = { navy:NAVY, indigo:'#2b2459', dark:DARK, light:'#f4f6f9' }[s.face];
+  const ink = { auto: s.face === 'light' ? NAVY : GLOW, yellow:'#ffe066', pink:'#ff7eb6', white:'#ffffff' }[s.eyeC];
+  p.push(`<rect x="${fx}" y="112" width="${fw}" height="72" rx="30" fill="${F(faceFill)}"/>`);
+  p.push(`<rect x="${fx+8}" y="116" width="${fw-16}" height="26" rx="13" fill="#fff" opacity=".08"/>`);
+  if (s.face !== 'light') p.push(`<path d="M${fx+14} 124 Q${fx+20} 116 ${fx+34} 116" stroke="#fff" stroke-opacity=".25" stroke-width="5" stroke-linecap="round" fill="none"/>`);
+  const ln = `stroke="${ink}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"`;
+  const E = f => f(106) + f(150);
+  p.push(s.face !== 'light' ? `<g filter="url(#${id}gl)">` : '<g>');
+  p.push({
+    dot:   E(x => `<circle cx="${x}" cy="142" r="8.5" fill="${ink}"/>`),
+    oval:  E(x => `<ellipse cx="${x}" cy="141" rx="7" ry="10" fill="${ink}"/><circle cx="${x+2.5}" cy="137" r="2.5" fill="#fff" opacity=".8"/>`),
+    happy: E(x => `<path d="M${x-9} 146 Q${x} 134 ${x+9} 146" ${ln}/>`),
+    wink:  `<circle cx="106" cy="142" r="8.5" fill="${ink}"/><path d="M141 144 Q150 136 159 144" ${ln}/>`,
+    heart: E(x => `<path d="M${x} 151 L${x-10} 141 A5.5 5.5 0 0 1 ${x} 134 A5.5 5.5 0 0 1 ${x+10} 141 Z" fill="${s.eyeC==='auto'?'#ff7eb6':ink}"/>`),
+    bars:  E(x => `<rect x="${x-4}" y="130" width="8" height="22" rx="4" fill="${ink}"/>`),
+    squint:`<path d="M99 134 L111 142 L99 150 M157 134 L145 142 L157 150" ${ln}/>`,
+    star:  E(x => `<path d="M${x} 129 L${x+4} 138 L${x+13} 139 L${x+6} 145 L${x+8} 154 L${x} 149 L${x-8} 154 L${x-6} 145 L${x-13} 139 L${x-4} 138 Z" fill="${ink}" stroke="${ink}" stroke-width="2" stroke-linejoin="round"/>`),
+    big:   E(x => `<circle cx="${x}" cy="141" r="12" fill="${ink}"/><circle cx="${x+4}" cy="136" r="4" fill="#fff"/><circle cx="${x-4}" cy="146" r="2" fill="#fff"/>`),
+    sleepy:E(x => `<path d="M${x-10} 140 H${x+10}" ${ln}/><path d="M${x-8} 140 Q${x} 150 ${x+8} 140 Z" fill="${ink}"/>`) + `<text x="168" y="128" font-size="13" font-weight="700" font-family="system-ui,sans-serif" fill="${ink}">z</text>`,
+    sad:   E(x => `<circle cx="${x}" cy="144" r="7" fill="${ink}"/>`) + `<path d="M96 132 L114 128 M160 132 L142 128" ${ln} stroke-width="4"/>`,
+    determined: E(x => `<circle cx="${x}" cy="145" r="7" fill="${ink}"/>`) + `<path d="M95 128 L115 135 M161 128 L141 135" ${ln} stroke-width="4.5"/>`,
+    side:  E(x => `<path d="M${x-11} 142 Q${x} 132 ${x+11} 142 Q${x} 150 ${x-11} 142 Z" fill="none" stroke="${ink}" stroke-width="3"/><circle cx="${x+5}" cy="142" r="4.5" fill="${ink}"/>`),
+    dizzy: E(x => `<path d="M${x-8} 134 L${x+8} 150 M${x+8} 134 L${x-8} 150" ${ln}/>`),
+    cool:  `<path d="M90 134 H166 V140 Q164 154 148 154 Q136 154 132 140 H124 Q120 154 108 154 Q92 154 90 140 Z" fill="${ink}"/><path d="M98 138 L104 138" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".7"/>`,
+    pixel: E(x => `<rect x="${x-8}" y="134" width="16" height="16" fill="${ink}"/><rect x="${x-8}" y="134" width="6" height="6" fill="#fff" opacity=".6"/>`),
+    think: `<circle cx="112" cy="142" r="5" fill="${ink}"/><circle cx="128" cy="142" r="5" fill="${ink}" opacity=".7"/><circle cx="144" cy="142" r="5" fill="${ink}" opacity=".4"/>`,
+  }[s.eyes]);
+  if (s.blush === 'on') p.push(`<ellipse cx="${fx+16}" cy="160" rx="8" ry="4.5" fill="${BLUSH}" opacity=".85"/><ellipse cx="${fx+fw-16}" cy="160" rx="8" ry="4.5" fill="${BLUSH}" opacity=".85"/>`);
+  p.push({
+    smile:`<path d="M117 160 Q128 170 139 160" ${ln}/>`,
+    grin: `<path d="M115 158 H141 Q139 172 128 172 Q117 172 115 158 Z" fill="${ink}"/>`,
+    cat:  `<path d="M114 161 Q121 169 128 161 Q135 169 142 161" ${ln} stroke-width="4"/>`,
+    flat: `<path d="M118 164 H138" ${ln}/>`,
+    open: `<ellipse cx="128" cy="166" rx="7" ry="8" fill="${ink}"/>`,
+    laugh:`<path d="M112 157 H144 Q144 176 128 176 Q112 176 112 157 Z" fill="${ink}"/><path d="M118 170 Q128 164 138 170 Q134 176 128 176 Q122 176 118 170 Z" fill="#ff7eb6"/>`,
+    tongue:`<path d="M116 160 Q128 168 140 160" ${ln}/><path d="M124 165 V172 Q128 177 132 172 V165 Z" fill="#ff7eb6"/>`,
+    smirk:`<path d="M117 165 Q131 167 140 158" ${ln}/>`,
+    wavy: `<path d="M114 164 Q118 158 121 164 T128 164 T135 164 T142 164" ${ln} stroke-width="4"/>`,
+    sad:  `<path d="M118 169 Q128 159 138 169" ${ln}/>`,
+    kiss: `<path d="M126 158 Q133 161 128 164 Q133 167 126 170" ${ln} stroke-width="4"/>`,
+    grille:`<rect x="112" y="158" width="32" height="14" rx="5" fill="${ink}"/><path d="M120 158 V172 M128 158 V172 M136 158 V172" stroke="${faceFill}" stroke-width="2.5"/>`,
+    talk: [0,1,2,3,4].map(i => { const h = [6,12,16,10,6][i]; return `<rect x="${113+i*7}" y="${166-h/2}" width="4" height="${h}" rx="2" fill="${ink}"/>`; }).join(''),
+    none: '',
+  }[s.mouth]);
+  p.push('</g>');
+  p.push(`</g>`);
+  {
+    defs.push(`<radialGradient id="${id}hd" gradientUnits="userSpaceOnUse" cx="${L+(R-L)*.38}" cy="${T+50}" r="150"><stop offset="0" stop-color="${mix(main,.45)}"/><stop offset=".45" stop-color="${main}"/><stop offset=".85" stop-color="${shade}"/><stop offset="1" stop-color="${mix(shade,-.2)}"/></radialGradient>`,
+      `<filter id="${id}gl" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`,
+      `<filter id="${id}bl" x="-20%" y="-200%" width="140%" height="500%"><feGaussianBlur stdDeviation="4"/></filter>`);
+    p.push(`<defs>${defs.join('')}</defs>`);
+  }
+  return p.join('');
+}
+
+function render() {
+  const inner = svgMarkup(state);
+  for (const id of ['avatar','s96','s40','s24','s36']) document.getElementById(id).innerHTML = inner;
+}
+const full = () => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="512" height="512">${svgMarkup(state)}</svg>`;
+const fileName = () => (document.getElementById('name').value.trim() || 'bot').toLowerCase().replace(/\s+/g,'-');
+document.getElementById('png').onclick = async () => {
+  try {
+    const img = new Image();
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(full());
+    await img.decode();
+    const c = Object.assign(document.createElement('canvas'), { width:512, height:512 });
+    c.getContext('2d').drawImage(img, 0, 0, 512, 512);
+    const blob = await new Promise(ok => c.toBlob(ok, 'image/png'));
+    const url = URL.createObjectURL(blob);
+    const a = Object.assign(document.createElement('a'), { href:url, download:fileName() + '.png' });
+    document.body.appendChild(a); a.click(); a.remove();   // Firefox/Safari cần <a> nằm trong DOM
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch (e) {
+    alert('Không tải được ảnh: ' + e.message);
+  }
+};
+document.getElementById('random').onclick = () => {
+  for (const [key, o] of Object.entries(OPTIONS)) {
+    const keys = Object.keys(o.items);
+    state[key] = keys[Math.floor(Math.random() * keys.length)];
+    document.querySelector(`input[name=${key}][value=${state[key]}]`).checked = true;
+  }
+  render();
+};
+document.getElementById('name').oninput = e => document.getElementById('chatName').textContent = e.target.value;
+document.getElementById('role').oninput = e => document.getElementById('chatRole').textContent = e.target.value;
+render();
+</script>
+</body>
+</html>
