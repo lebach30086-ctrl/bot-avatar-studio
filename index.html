@@ -106,6 +106,8 @@ for (const [key, o] of Object.entries(OPTIONS)) {
   controls.appendChild(fs);
 }
 
+// nền: tròn khi xem trước, vuông kín khung khi tải xuống (s.square)
+const bgShape = (s, fill) => s.square ? `<rect width="256" height="256" fill="${fill}"/>` : `<circle cx="128" cy="128" r="128" fill="${fill}"/>`;
 let uid = 0;
 function svgMarkup(s) {
   const id = 'hc' + (uid++);
@@ -131,8 +133,7 @@ function svgMarkup(s) {
     squircle:[`<path d="M128 62 Q208 62 210 142 Q208 222 128 222 Q48 222 46 142 Q48 62 128 62 Z"/>`, 62, 46, 210],
   }[s.shape];
   const p = [`<defs><clipPath id="${id}">${shape}</clipPath></defs>`];
-  if (s.bg === 'soft')  p.push(`<circle cx="128" cy="128" r="128" fill="${mix(ac, .82)}"/>`);
-  else if (s.bg !== 'none') p.push(`<circle cx="128" cy="128" r="128" fill="${OPTIONS.bg.items[s.bg]}"/>`);
+  if (s.bg !== 'none') p.push(bgShape(s, s.bg === 'soft' ? mix(ac, .82) : OPTIONS.bg.items[s.bg]));
   p.push(`<ellipse cx="128" cy="230" rx="72" ry="9" fill="#000" opacity=".18" filter="url(#${id}bl)"/>`);
   p.push(`<g>`);
 
@@ -239,7 +240,7 @@ async function stylize(s) {
   if (s.style === 'ascii') {
     const n = 30, k = 256 / n, d = await raster(svgMarkup({ ...s, bg:'none' }), n), ramp = '.:-=+*#%@';
     const lift = v => Math.round(v * .8 + 255 * .2);   // làm sáng màu chữ trên nền tối
-    const out = [`<circle cx="128" cy="128" r="128" fill="#0b1020"/>`];
+    const out = [bgShape(s, '#0b1020')];
     for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
       const i = (y * n + x) * 4; if (d[i+3] < 100) continue;
       const lum = (0.2126 * d[i] + 0.7152 * d[i+1] + 0.0722 * d[i+2]) / 255;
@@ -256,7 +257,7 @@ async function render() {
   if (t !== ticket) return;                                           // bỏ kết quả cũ nếu đã đổi tùy chọn
   for (const id of ['avatar','s96','s40','s24']) document.getElementById(id).innerHTML = inner;
 }
-const full = async () => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="512" height="512">${await stylize(state)}</svg>`;
+const full = async () => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="512" height="512">${await stylize({ ...state, square:true })}</svg>`;
 const fileName = () => (document.getElementById('name').value.trim() || 'bot').toLowerCase().replace(/\s+/g,'-');
 document.getElementById('png').onclick = async () => {
   try {
