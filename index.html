@@ -79,7 +79,7 @@ const OPTIONS = {
     pink:'#ff7eb6', purple:'#c49bff', blue:'#6fb6ff', white:'#ffffff', navy:NAVY } },
   mouth: { label:'Miệng', items:{ smile:'Mỉm cười', grin:'Cười tươi', cat:'Mèo :3', flat:'Nghiêm túc', open:'Ngạc nhiên', laugh:'Cười lớn', tongue:'Lè lưỡi', smirk:'Nhếch mép', wavy:'Lo lắng', sad:'Buồn', kiss:'Chu môi', grille:'Loa robot', talk:'Đang nói', none:'Không' } },
   blush: { label:'Má hồng', items:{ off:'Không', on:'Có' } },
-  ear:   { label:'Kiểu tai', items:{ block:'Khối', round:'Tròn', ring:'Vòng', bolt:'Bu-lông', stack:'Bậc', grille:'Loa', wing:'Cánh', antenna:'Ăng-ten nhỏ' } },
+  ear:   { label:'Kiểu tai', items:{ block:'Khối', grille:'Loa', antenna:'Ăng-ten nhỏ' } },
   pods:  { label:'Màu tai', items:{ dark:'Tối', accent:'Màu nhấn', body:'Màu thân', none:'Không có tai' } },
   detail:{ label:'Hoa văn', items:{ none:'Không', lines:'Rãnh', dots:'Đinh tán' } },
   bg:    { label:'Nền (ô đầu = trong suốt, ô 2 = theo màu nhấn)', swatch:true, items:{ none:'repeating-conic-gradient(#d9dde5 0 25%, #fff 0 50%) 50%/10px 10px',
@@ -148,16 +148,11 @@ function svgMarkup(s) {
     // vẽ tai trái quanh mép L rồi lật gương sang phải (mọi dáng đầu đều đối xứng qua x=128)
     const ear = {
       block:  `<rect x="${L-14}" y="112" width="30" height="60" rx="14" fill="${f}"/>`,
-      round:  `<circle cx="${L-2}" cy="142" r="24" fill="${f}"/><circle cx="${L-6}" cy="142" r="10" ${hole}/>`,
-      ring:   `<circle cx="${L-2}" cy="142" r="24" fill="${f}"/><circle cx="${L-6}" cy="142" r="13" fill="${F(main)}"/>`,
-      bolt:   `<path d="M${L-24} 142 L${L-13} 123 H${L+9} L${L+20} 142 L${L+9} 161 H${L-13} Z" fill="${f}"/><circle cx="${L-4}" cy="142" r="7" ${hole}/>`,
-      stack:  `<rect x="${L-10}" y="114" width="24" height="56" rx="10" fill="${f}"/><rect x="${L-22}" y="126" width="18" height="32" rx="8" fill="${f}"/><rect x="${L-22}" y="126" width="18" height="32" rx="8" ${hole}/>`,
       grille: `<rect x="${L-18}" y="110" width="34" height="64" rx="12" fill="${f}"/><path d="M${L-11} 126 H${L+2} M${L-11} 136 H${L+2} M${L-11} 146 H${L+2} M${L-11} 156 H${L+2}" stroke="#000" stroke-opacity=".25" stroke-width="4" stroke-linecap="round"/>`,
-      wing:   `<path d="M${L+10} 160 Q${L-26} 156 ${L-34} 104 Q${L-4} 116 ${L+10} 122 Z" fill="${f}"/>`,
       antenna:`<path d="M${L-6} 136 L${L-24} 108" stroke="${F(pc)}" stroke-width="6" stroke-linecap="round"/><circle cx="${L-26}" cy="104" r="8" fill="${F(ac)}"/><rect x="${L-12}" y="124" width="24" height="36" rx="9" fill="${f}"/>`,
     }[s.ear];
     // đặt sau đầu, lệch ra ngoài để vẫn thấy rõ hình dạng tai
-    const dx = Math.min(10, L - 36);   // dáng bầu dẹt đã sát mép khung thì không đẩy ra
+    const dx = Math.min(4, L - 36);   // dáng bầu dẹt đã sát mép khung thì không đẩy ra
     p.push(`<g transform="translate(${-dx} 0)">${ear}</g>`, `<g transform="translate(${256+dx} 0) scale(-1 1)">${ear}</g>`);
   }
 
