@@ -67,7 +67,7 @@
 <script>
 const DARK = '#2b2d3a', NAVY = '#1f2a5c', GLOW = '#3ee6e8', BLUSH = '#f2559a';
 const OPTIONS = {
-  style: { label:'Phong cách', items:{ three:'3D', ascii:'ASCII' } },
+  style: { label:'Phong cách', items:{ three:'3D', pixel:'Pixel art', ascii:'ASCII' } },
   color: { label:'Màu thân', swatch:true, items:{
     white:['#f4f6f9','#cfd6e0'], blue:['#5aaaf2','#3a80d4'], sky:['#6fd0f5','#3fa9d6'], teal:['#2fbfae','#1f9a8c'],
     green:['#8fd150','#68ad2c'], yellow:['#f9c23c','#e09a12'], orange:['#f7a928','#dc860b'], coral:['#f57a6b','#d9554a'],
@@ -139,7 +139,7 @@ function svgMarkup(s) {
   }[s.shape];
   const p = [`<defs><clipPath id="${id}">${shape}</clipPath></defs>`];
   if (s.bg !== 'none') p.push(bgShape(s, s.bg === 'soft' ? mix(ac, .82) : OPTIONS.bg.items[s.bg]));
-  p.push(`<ellipse cx="128" cy="230" rx="72" ry="9" fill="#000" opacity=".18" filter="url(#${id}bl)"/>`);
+  if (!s.noFx) p.push(`<ellipse cx="128" cy="230" rx="72" ry="9" fill="#000" opacity=".18" filter="url(#${id}bl)"/>`);
   p.push(`<g>`);
 
   // phía sau đầu
@@ -180,9 +180,9 @@ function svgMarkup(s) {
   p.push(`<rect x="${fx}" y="112" width="${fw}" height="72" rx="30" fill="${F(faceFill)}"/>`);
   p.push(`<rect x="${fx+8}" y="116" width="${fw-16}" height="26" rx="13" fill="#fff" opacity=".08"/>`);
   if (s.face !== 'light') p.push(`<path d="M${fx+14} 124 Q${fx+20} 116 ${fx+34} 116" stroke="#fff" stroke-opacity=".25" stroke-width="5" stroke-linecap="round" fill="none"/>`);
-  const lnw = w => `stroke="${ink}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" fill="none"`, ln = lnw(5);
+  const lnw = w => `stroke="${ink}" stroke-width="${s.noFx ? w * 1.7 : w}" stroke-linecap="round" stroke-linejoin="round" fill="none"`, ln = lnw(5);
   const E = f => f(106) + f(150);
-  p.push(s.face !== 'light' ? `<g filter="url(#${id}gl)">` : '<g>');
+  p.push(s.face !== 'light' && !s.noFx ? `<g filter="url(#${id}gl)">` : '<g>');
   p.push({
     dot:   E(x => `<circle cx="${x}" cy="142" r="8.5" fill="${ink}"/>`),
     oval:  E(x => `<ellipse cx="${x}" cy="141" rx="7" ry="10" fill="${ink}"/><circle cx="${x+2.5}" cy="137" r="2.5" fill="#fff" opacity=".8"/>`),
@@ -242,6 +242,28 @@ async function raster(markup, n) {
 }
 const hex = (r, g, b) => '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
 async function stylize(s) {
+  if (s.style === 'pixel') {
+    // 2 lần raster: chỉ robot (làm mask + viền) và có nền; tắt bóng/glow để pixel không bị lem
+    const n = 40, k = 256 / n, S = 4, N = n * S;                         // dựng nét gấp 4 rồi lấy màu ở tâm mỗi ô → không bị trộn màu
+    const bot = await raster(svgMarkup({ ...s, bg:'none', noFx:true }), N), full = await raster(svgMarkup({ ...s, noFx:true }), N);
+    const at = (x, y) => ((y * S + S / 2) * N + x * S + S / 2) * 4;
+    const q = v => Math.min(255, Math.round(v / 32) * 32);             // giảm màu cho ra chất pixel
+    const solid = (d, x, y) => x >= 0 && y >= 0 && x < n && y < n && d[at(x, y) + 3] >= 128;
+    const col = (d, x, y) => { const i = at(x, y); return hex(q(d[i]), q(d[i+1]), q(d[i+2])); };
+    const cell = (x, y) => {
+      if (solid(bot, x, y)) return col(bot, x, y);
+      if (solid(bot, x-1, y) || solid(bot, x+1, y) || solid(bot, x, y-1) || solid(bot, x, y+1)) return '#1a1530';   // viền tối
+      return solid(full, x, y) ? col(full, x, y) : null;
+    };
+    const out = [];
+    for (let y = 0; y < n; y++) for (let x = 0; x < n;) {
+      const c = cell(x, y); let w = 1;
+      while (x + w < n && cell(x + w, y) === c) w++;                    // gộp các ô cùng màu liền nhau
+      if (c) out.push(`<rect x="${x*k}" y="${y*k}" width="${w*k+.4}" height="${k+.4}" fill="${c}"/>`);   // +.4: lấp khe giữa các ô kích thước lẻ
+      x += w;
+    }
+    return `<g shape-rendering="crispEdges">${out.join('')}</g>`;
+  }
   if (s.style === 'ascii') {
     const n = 30, k = 256 / n, d = await raster(svgMarkup({ ...s, bg:'none' }), n), ramp = '.:-=+*#%@';
     const lift = v => Math.round(v * .8 + 255 * .2);   // làm sáng màu chữ trên nền tối
