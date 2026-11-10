@@ -75,6 +75,7 @@ const OPTIONS = {
   accent:{ label:'Màu điểm nhấn', swatch:true, items:{ cyan:GLOW, blue:'#3b82f6', teal:'#2fbfae', yellow:'#f9c23c', orange:'#f7a928',
     coral:'#f57a6b', pink:'#f2559a', purple:'#8d63c9', navy:NAVY } },
   shape: { label:'Dáng đầu', items:{ round:'Tròn', square:'Vuông bo', wide:'Bầu dẹt', tv:'TV', oct:'Bát giác', chin:'Cằm V', cat:'Mèo', squircle:'Squircle' } },
+  costume:{ label:'Trang phục thú', items:{ none:'Không', bear:'Gấu', pig:'Heo', penguin:'Cánh cụt', bunny:'Thỏ', cow:'Bò', fox:'Cáo', frog:'Ếch', dog:'Chó', cat:'Mèo', raccoon:'Gấu mèo', monkey:'Khỉ', panda:'Gấu trúc', dino:'Khủng long' } },
   top:   { label:'Trên đầu', items:{ fins:'Tai vây', horns:'Tai mèo', antenna:'Ăng-ten', double:'Râu đôi', gem:'Viên đá', none:'Không' } },
   cap:   { label:'Đèn đỉnh', items:{ pill:'Đèn', dome:'Vòm tối', none:'Không' } },
   face:  { label:'Màn hình mặt', items:{ navy:'Xanh đêm', indigo:'Tím than', dark:'Đen', light:'Sáng' } },
@@ -93,7 +94,7 @@ const OPTIONS = {
     blue:'#1e6ff0', teal:'#2fbfae', green:'#5cc26b', yellow:'#f9c23c', orange:'#f7a928', red:'#e3002d', hotpink:'#f2559a',
     purple:'#8d63c9', navy:'#1f2a5c', night:'#0b1020', black:'#1a1a1f' } },
 };
-const state = { style:'three', color:'white', accent:'cyan', shape:'round', top:'fins', cap:'pill', face:'navy', eyes:'dot', eyeC:'auto', mouth:'none',
+const state = { style:'three', costume:'none', color:'white', accent:'cyan', shape:'round', top:'fins', cap:'pill', face:'navy', eyes:'dot', eyeC:'auto', mouth:'none',
   blush:'off', ear:'block', pods:'dark', detail:'none', bg:'soft' };
 
 const controls = document.getElementById('controls');
@@ -114,9 +115,45 @@ for (const [key, o] of Object.entries(OPTIONS)) {
 // nền: tròn khi xem trước, vuông kín khung khi tải xuống (s.square)
 const bgShape = (s, fill) => s.square ? `<rect width="256" height="256" fill="${fill}"/>` : `<circle cx="128" cy="128" r="128" fill="${fill}"/>`;
 let uid = 0;
+// Trang phục thú: màu thân [sáng, tối] + các phần vẽ. back = sau đầu, clip = trên đầu (cắt theo dáng đầu), front = đè lên đầu
+const mirror = x => x + `<g transform="translate(256 0) scale(-1 1)">${x}</g>`;   // mọi dáng đầu đối xứng qua x=128
+const COSTUMES = {
+  bear:    { c:['#a0693f','#7a4a2a'] }, pig:  { c:['#f4a6c0','#d97f9f'] }, penguin: { c:['#3a3f72','#262a52'] },
+  bunny:   { c:['#f4f6f9','#cfd6e0'] }, cow:  { c:['#b23a48','#86232f'] }, fox:     { c:['#f7923a','#d96d1c'] },
+  frog:    { c:['#4cbf62','#2f9446'] }, dog:  { c:['#dcb68a','#b48d63'] }, cat:     { c:['#a2a2ae','#7a7a86'] },
+  raccoon: { c:['#8e8e9a','#6b6b76'] }, monkey: { c:['#9a6238','#74451f'] }, panda: { c:['#f4f6f9','#cfd6e0'] },
+  dino:    { c:['#45b35a','#2c8a41'] },
+};
+function costumeParts(kind, { T, L, R, F, main, fx, fw }) {
+  const roundEars = (r, inner) => mirror(`<circle cx="${L+30}" cy="${T+12}" r="${r}" fill="${F(main)}"/><circle cx="${L+30}" cy="${T+12}" r="${r*.55}" fill="${inner}"/>`);
+  const pointEars = (h, inner) => mirror(`<path d="M${L+12} ${T+44} L${L+20} ${T-h} L${L+70} ${T+14} Z" fill="${F(main)}" stroke="${F(main)}" stroke-width="8" stroke-linejoin="round"/><path d="M${L+26} ${T+30} L${L+28} ${T-h+24} L${L+54} ${T+16} Z" fill="${inner}"/>`);
+  const muzzle = (c, rx = 26) => `<ellipse cx="128" cy="201" rx="${rx}" ry="14" fill="${c}"/>`;
+  const nose = (c = '#2b1d1a') => `<ellipse cx="128" cy="194" rx="7" ry="5" fill="${c}"/>`;
+  const nostrils = c => `<ellipse cx="121" cy="201" rx="3" ry="4" fill="${c}"/><ellipse cx="135" cy="201" rx="3" ry="4" fill="${c}"/>`;
+  return {
+    bear:    { back: roundEars(26, '#e0b088'), clip: muzzle('#e0b088') + nose() },
+    pig:     { back: pointEars(10, '#e98aab'), clip: muzzle('#f9c3d5', 22) + nostrils('#c76088') },
+    penguin: { clip: `<ellipse cx="128" cy="152" rx="76" ry="58" fill="#f4f6f9"/>`, front: `<path d="M114 189 H142 L128 206 Z" fill="${F('#f7a928')}" stroke="${F('#f7a928')}" stroke-width="4" stroke-linejoin="round"/>` },
+    bunny:   { back: mirror(`<g transform="rotate(-10 ${L+50} ${T-30})"><ellipse cx="${L+50}" cy="${T-30}" rx="17" ry="48" fill="${F(main)}"/><ellipse cx="${L+50}" cy="${T-26}" rx="8" ry="34" fill="#f7b6cb"/></g>`), clip: `<path d="M122 192 H134 L128 199 Z" fill="#f2849e"/>` },
+    cow:     { back: mirror(`<path d="M${L+32} ${T+18} Q${L-6} ${T+10} ${L+2} ${T-30} Q${L+24} ${T-4} ${L+52} ${T+6} Z" fill="${F('#f1ead8')}"/><ellipse cx="${L-2}" cy="${T+40}" rx="20" ry="11" fill="${F(main)}"/>`), clip: muzzle('#f3b8b8', 32) + nostrils('#a5525a') },
+    fox:     { back: pointEars(40, '#fff3e6'), clip: `<ellipse cx="128" cy="204" rx="44" ry="18" fill="#fff3e6"/>` + nose() },
+    frog:    { front: mirror(`<circle cx="98" cy="${T+6}" r="22" fill="${F(main)}"/><circle cx="98" cy="${T+4}" r="13" fill="#fff"/><circle cx="100" cy="${T+5}" r="6" fill="#1a1a1f"/>`) },
+    dog:     { clip: muzzle('#f3dcc0', 28) + nose(), front: mirror(`<ellipse cx="${L+10}" cy="${T+58}" rx="18" ry="42" fill="${F('#8a5a3c')}" transform="rotate(16 ${L+10} ${T+58})"/>`) },
+    cat:     { back: pointEars(36, '#f4a6c0'), clip: `<path d="M123 192 H133 L128 198 Z" fill="#f2849e"/>`, front: mirror(`<path d="M100 194 H76 M100 202 L78 208" stroke="#4a4a55" stroke-width="3" stroke-linecap="round"/>`) },
+    raccoon: { back: roundEars(22, '#3a3a44'), clip: `<rect x="${fx-12}" y="102" width="${fw+24}" height="92" rx="42" fill="#3a3a44"/>` + `<ellipse cx="128" cy="205" rx="26" ry="13" fill="#e6e6ec"/>` + nose() },
+    panda:   { back: mirror(`<circle cx="${L+30}" cy="${T+12}" r="24" fill="${F('#2b2b33')}"/>`),
+               clip: mirror(`<ellipse cx="${fx+14}" cy="150" rx="30" ry="36" fill="#2b2b33" transform="rotate(20 ${fx+14} 150)"/>`) + nose() },
+    dino:    { back: `<path d="M98 ${T+10} L106 ${T-20} L118 ${T+2} L128 ${T-28} L138 ${T+2} L150 ${T-20} L158 ${T+10} Z" fill="${F('#e8508a')}" stroke="${F('#e8508a')}" stroke-width="6" stroke-linejoin="round"/>`,
+               clip: `<rect x="0" y="192" width="256" height="40" fill="#f2d05a"/><path d="M0 204 H256 M0 216 H256" stroke="#d9a92e" stroke-width="3"/>` },
+    monkey:  { back: mirror(`<circle cx="${L-2}" cy="140" r="24" fill="${F(main)}"/><circle cx="${L-2}" cy="140" r="13" fill="#e8c09a"/>`), clip: `<ellipse cx="128" cy="154" rx="72" ry="58" fill="#e8c09a"/>` },
+  }[kind];
+}
+
 function svgMarkup(s) {
+  const co = COSTUMES[s.costume];
+  if (co) s = { ...s, top:'none', cap:'none', pods:'none', detail:'none' };   // trang phục thay cho phụ kiện đầu + tai
   const id = 'hc' + (uid++);
-  const [main, shade] = OPTIONS.color.items[s.color];
+  const [main, shade] = co ? co.c : OPTIONS.color.items[s.color];
   const ac = OPTIONS.accent.items[s.accent];
   const defs = [];
   // mix: t>0 pha trắng, t<0 pha đen
@@ -162,11 +199,18 @@ function svgMarkup(s) {
     p.push(`<g transform="translate(${-dx} 0)">${ear}</g>`, `<g transform="translate(${256+dx} 0) scale(-1 1)">${ear}</g>`);
   }
 
+  const fw0 = ['wide','tv','oct','chin'].includes(s.shape) ? 136 : 112;
+  const cp = co ? costumeParts(s.costume, { T, L, R, F, main, fx:128 - fw0/2, fw:fw0 }) : {};
+  if (cp.back) p.push(cp.back);
+
   // đầu 2 tông
   p.push(`<g clip-path="url(#${id})"><rect width="256" height="256" fill="url(#${id}hd)"/></g>`);
-  if (s.shape === 'cat') p.push(`<path d="M60 70 L64 98 L86 84 Z M196 70 L192 98 L170 84 Z" fill="${F(ac)}"/>`);
+  if (s.shape === 'cat' && !co) p.push(`<path d="M60 70 L64 98 L86 84 Z M196 70 L192 98 L170 84 Z" fill="${F(ac)}"/>`);
   if (s.detail === 'lines') p.push(`<path d="M104 ${T+14} H152 M112 ${T+24} H144" stroke="#fff" stroke-opacity=".45" stroke-width="4" stroke-linecap="round"/><path d="M${L+12} 150 V176 M${R-12} 150 V176" stroke="#000" stroke-opacity=".15" stroke-width="4" stroke-linecap="round"/>`);
   if (s.detail === 'dots') p.push([0,1,2].map(i => `<circle cx="${L+14}" cy="${146+i*12}" r="3.5" fill="#000" opacity=".18"/><circle cx="${R-14}" cy="${146+i*12}" r="3.5" fill="#000" opacity=".18"/>`).join('') + `<circle cx="112" cy="${T+18}" r="3.5" fill="#fff" opacity=".5"/><circle cx="128" cy="${T+16}" r="3.5" fill="#fff" opacity=".5"/><circle cx="144" cy="${T+18}" r="3.5" fill="#fff" opacity=".5"/>`);
+
+  if (cp.clip) p.push(`<g clip-path="url(#${id})">${cp.clip}</g>`);
+  if (cp.front) p.push(cp.front);
 
   // đỉnh
   if (s.cap === 'pill') p.push(`<rect x="100" y="${T-4}" width="56" height="22" rx="9" fill="${F(ac)}"/><rect x="108" y="${T}" width="20" height="6" rx="3" fill="#fff" opacity=".6"/>`);
@@ -174,7 +218,7 @@ function svgMarkup(s) {
   if (s.top === 'gem')  p.push(`<path d="M128 ${T-30} L146 ${T-2} L128 ${T+22} L110 ${T-2} Z" fill="${F(ac)}"/><path d="M128 ${T-30} L146 ${T-2} L128 ${T+22} Z" fill="#000" opacity=".15"/><path d="M120 ${T-6} L128 ${T-20}" stroke="#fff" stroke-opacity=".7" stroke-width="3" stroke-linecap="round"/>`);
 
   // màn hình mặt
-  const fw = ['wide','tv','oct','chin'].includes(s.shape) ? 136 : 112, fx = 128 - fw/2;
+  const fw = fw0, fx = 128 - fw/2;
   const faceFill = { navy:NAVY, indigo:'#2b2459', dark:DARK, light:'#f4f6f9' }[s.face];
   const ink = s.eyeC === 'auto' ? (s.face === 'light' ? NAVY : GLOW) : OPTIONS.eyeC.items[s.eyeC];
   p.push(`<rect x="${fx}" y="112" width="${fw}" height="72" rx="30" fill="${F(faceFill)}"/>`);
@@ -305,7 +349,7 @@ document.getElementById('png').onclick = async () => {
 const syncInputs = () => { for (const key in OPTIONS) document.querySelector(`input[name=${key}][value=${state[key]}]`).checked = true; };
 
 // 12 mẫu robot có sẵn (không chân đế); thiếu key nào thì lấy từ TPL_BASE
-const TPL_BASE = { top:'none', cap:'none', face:'indigo', eyeC:'auto', mouth:'none', blush:'off', ear:'block', pods:'accent', detail:'none' };
+const TPL_BASE = { costume:'none', top:'none', cap:'none', face:'indigo', eyeC:'auto', mouth:'none', blush:'off', ear:'block', pods:'accent', detail:'none' };
 const TEMPLATES = [
   { color:'blue',   accent:'orange', shape:'oct',      top:'horns',   cap:'pill', eyes:'happy', eyeC:'white',  ear:'grille', detail:'lines', bg:'sky' },
   { color:'yellow', accent:'pink',   shape:'tv',       top:'horns',   eyes:'bars',  eyeC:'pink',   bg:'peach' },
@@ -319,6 +363,10 @@ const TEMPLATES = [
   { color:'purple', accent:'yellow', shape:'round',    top:'fins',    cap:'pill', eyes:'happy', eyeC:'pink',   bg:'lemon' },
   { color:'teal',   accent:'coral',  shape:'wide',     cap:'dome', eyes:'happy', eyeC:'white',  mouth:'grille', blush:'on', ear:'antenna', bg:'pink' },
   { color:'pink',   accent:'teal',   shape:'squircle', top:'fins',    cap:'pill', eyes:'happy', eyeC:'yellow', mouth:'cat', bg:'mint' },
+  // bot mặc đồ thú
+  ...[['bear','happy'], ['pig','dot'], ['penguin','oval'], ['bunny','happy'], ['cow','dot'], ['fox','wink'],
+      ['frog','happy'], ['dog','oval'], ['cat','happy'], ['raccoon','dot'], ['monkey','happy'], ['panda','dot'], ['dino','happy']]
+    .map(([costume, eyes]) => ({ costume, eyes, shape:'squircle', eyeC:'auto', blush:'on', bg:'lavender', accent:'pink', color:'white' })),
 ].map(t => ({ ...TPL_BASE, ...t }));
 const tplBox = document.getElementById('tpl');
 TEMPLATES.forEach((t, i) => {
